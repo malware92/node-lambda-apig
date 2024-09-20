@@ -1,0 +1,85 @@
+service: my-dynamodb-lambda
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-2
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:PutItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:Scan"
+      Resource:
+        - "arn:aws:dynamodb:us-east-2:*:table/Users"
+        - "arn:aws:dynamodb:us-east-2:*:table/Inventory"
+
+functions:
+  auth:
+    handler: dist/auth.handler
+    events:
+      - http:
+          path: /auth
+          method: post
+          cors: true
+  inventory:
+    handler: dist/inventory.getInventory
+    events:
+      - http:
+          path: /inventory
+          method: get
+          cors: true
+  putInventory:
+    handler: dist/inventory.putInventory
+    events:
+      - http:
+          path: /putinventory
+          method: post
+          cors: true
+  deleteInventory:
+    handler: dist/inventory.deleteInventory
+    events:
+      - http:
+          path: /deleteinventory
+          method: delete
+          cors: true
+
+resources:
+  Resources:
+    UsersTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        TableName: "Users"
+        AttributeDefinitions:
+          - AttributeName: "username"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "username"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    InventoryTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        TableName: "Inventory"
+        AttributeDefinitions:
+          - AttributeName: "productName"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "productName"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+plugins:
+  - serverless-webpack
+  #- serverless-plugin-include-dependencies
+
+custom:
+  webpack:
+    webpackConfig: './webpack.config.js'
+    includeModules: true
